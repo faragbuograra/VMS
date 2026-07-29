@@ -54,7 +54,7 @@ app.post("/api/register", async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const { rows } = await query(
       `INSERT INTO users (full_name, phone, password_hash, appointment_date)
-       VALUES ($1, $2, $3, $4) RETURNING id, full_name, phone, role, appointment_date`,
+       VALUES ($1, $2, $3, $4) RETURNING id, full_name, phone, role, appointment_date, booking_status`,
       [full_name.trim(), phone.trim(), hash, appointment_date || null]
     );
     const user = rows[0];
@@ -82,7 +82,7 @@ app.post("/api/login", async (req, res) => {
 
 app.get("/api/me", auth, async (req, res) => {
   const { rows } = await query(
-    "SELECT id, full_name, phone, role, appointment_date FROM users WHERE id = $1",
+    "SELECT id, full_name, phone, role, appointment_date, booking_status FROM users WHERE id = $1",
     [req.user.id]
   );
   res.json({ user: rows[0] });
@@ -134,7 +134,7 @@ app.put("/api/appointment", auth, async (req, res) => {
 // ---------- admin ----------
 app.get("/api/admin/customers", auth, adminOnly, async (req, res) => {
   const { rows: customers } = await query(
-    `SELECT u.id, u.full_name, u.phone, u.appointment_date, u.created_at
+    `SELECT u.id, u.full_name, u.phone, u.appointment_date, u.booking_status, u.created_at
      FROM users u WHERE u.role = 'customer' ORDER BY u.created_at DESC`
   );
   const { rows: reqs } = await query("SELECT * FROM requirements ORDER BY sort_order");
@@ -185,6 +185,16 @@ app.get("/api/admin/customers", auth, adminOnly, async (req, res) => {
   });
 
   res.json({ customers: result });
+});
+
+app.put("/api/admin/customers/:id/booking-status", auth, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const { booking_status } = req.body || {};
+  if (!["pending", "booked", "cancelled"].includes(booking_status)) {
+    return res.status(400).json({ error: "قيمة غير صحيحة" });
+  }
+  await query("UPDATE users SET booking_status = $1 WHERE id = $2", [booking_status, id]);
+  res.json({ ok: true });
 });
 
 // في الإنتاج: تقديم الواجهة المبنية (client/dist) من نفس الخادم

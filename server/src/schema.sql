@@ -5,8 +5,12 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
   appointment_date DATE,
+  booking_status TEXT NOT NULL DEFAULT 'pending' CHECK (booking_status IN ('pending', 'booked', 'cancelled')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS booking_status TEXT NOT NULL DEFAULT 'pending'
+  CHECK (booking_status IN ('pending', 'booked', 'cancelled'));
 
 CREATE TABLE IF NOT EXISTS requirements (
   id SERIAL PRIMARY KEY,

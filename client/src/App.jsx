@@ -35,6 +35,22 @@ function OptionalChip() {
   );
 }
 
+/* حالة حجز الموعد — يتحكم فيها الأدمن */
+const BOOKING_STATUS = {
+  pending: { label: "قيد الانتظار", kind: "na" },
+  booked: { label: "تم حجز موعد", kind: "ok" },
+  cancelled: { label: "ملغى", kind: "miss" },
+};
+
+function BookingStatusStamp({ status, small }) {
+  const s = BOOKING_STATUS[status] || BOOKING_STATUS.pending;
+  return (
+    <Stamp kind={s.kind} small={small}>
+      {s.label}
+    </Stamp>
+  );
+}
+
 const inputCls =
   "w-full rounded-md border border-rule bg-white px-3.5 py-2.5 text-[15px] transition-colors focus:border-pen";
 
@@ -310,6 +326,16 @@ function Checklist({ user }) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-6">
+      {user.booking_status === "booked" && (
+        <div className="mb-3.5 rounded-lg border border-seal/40 bg-seal/8 px-5 py-3 text-sm font-bold text-seal">
+          ✅ تم تأكيد حجز موعدك
+        </div>
+      )}
+      {user.booking_status === "cancelled" && (
+        <div className="mb-3.5 rounded-lg border border-stamp/40 bg-stamp/8 px-5 py-3 text-sm font-bold text-stamp">
+          ⚠️ تم إلغاء طلبك — تواصل مع الإدارة لمزيد من التفاصيل
+        </div>
+      )}
       {/* غلاف الملف */}
       <div className="mb-3.5 flex flex-wrap items-center gap-x-8 gap-y-4 rounded-lg border border-rule bg-paper p-5 shadow-[0_1px_3px_rgba(14,36,24,0.07)]">
         <div className="min-w-56 flex-1">
@@ -379,10 +405,24 @@ function AdminDashboard() {
     api("/api/admin/customers").then((d) => setCustomers(d.customers)).catch(() => setCustomers([]));
   }
 
+  async function updateBookingStatus(id, booking_status) {
+    setCustomers(customers.map((c) => (c.id === id ? { ...c, booking_status } : c)));
+    try {
+      await api(`/api/admin/customers/${id}/booking-status`, {
+        method: "PUT",
+        body: JSON.stringify({ booking_status }),
+      });
+    } catch (e) {
+      alert(e.message);
+      load();
+    }
+  }
+
   const filtered = useMemo(() => {
     if (!customers) return [];
     if (filter === "complete") return customers.filter((c) => c.completion === 100);
     if (filter === "incomplete") return customers.filter((c) => c.completion < 100);
+    if (filter === "cancelled") return customers.filter((c) => c.booking_status === "cancelled");
     return customers;
   }, [customers, filter]);
 
@@ -390,6 +430,7 @@ function AdminDashboard() {
     return <div className="py-20 text-center text-inkmut">جاري فتح سجل الزبائن...</div>;
 
   const completeCount = customers.filter((c) => c.completion === 100).length;
+  const cancelledCount = customers.filter((c) => c.booking_status === "cancelled").length;
 
   const chip = (key, label, count) => (
     <button
@@ -407,11 +448,12 @@ function AdminDashboard() {
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-6">
       {/* عدادات السجل */}
-      <div className="mb-5 grid grid-cols-3 gap-3 max-sm:grid-cols-1">
+      <div className="mb-5 grid grid-cols-4 gap-3 max-sm:grid-cols-2">
         {[
           { n: customers.length, l: "إجمالي الزبائن", c: "text-ink" },
           { n: completeCount, l: "ملفات جاهزة", c: "text-seal" },
           { n: customers.length - completeCount, l: "ملفات ناقصة", c: "text-stamp" },
+          { n: cancelledCount, l: "طلبات ملغاة", c: "text-inkmut" },
         ].map((s) => (
           <div key={s.l} className="rounded-lg border border-rule bg-paper p-4 text-center shadow-[0_1px_3px_rgba(14,36,24,0.07)]">
             <div className={`font-mono text-3xl font-semibold ${s.c}`}>{s.n}</div>
@@ -424,6 +466,7 @@ function AdminDashboard() {
         {chip("all", "الكل", customers.length)}
         {chip("incomplete", "الناقصين", customers.length - completeCount)}
         {chip("complete", "الجاهزين", completeCount)}
+        {chip("cancelled", "الملغاة", cancelledCount)}
         <span className="flex-1" />
         <button
           className="rounded-full border border-rule bg-paper px-4 py-1.5 text-[13px] text-inkmut transition-colors hover:bg-desk/70"
@@ -440,7 +483,12 @@ function AdminDashboard() {
       )}
 
       {filtered.map((c) => (
-        <div key={c.id} className="mb-3 overflow-hidden rounded-lg border border-rule bg-paper shadow-[0_1px_3px_rgba(14,36,24,0.07)]">
+        <div
+          key={c.id}
+          className={`mb-3 overflow-hidden rounded-lg border border-rule bg-paper shadow-[0_1px_3px_rgba(14,36,24,0.07)] ${
+            c.booking_status === "cancelled" ? "opacity-60" : ""
+          }`}
+        >
           <button
             className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 text-start transition-colors hover:bg-desk/40"
             onClick={() => setOpenId(openId === c.id ? null : c.id)}
@@ -452,6 +500,7 @@ function AdminDashboard() {
                 {c.appointment_date && <> · {fmtDate(c.appointment_date)}</>}
               </span>
             </span>
+            <BookingStatusStamp status={c.booking_status} small />
             <span className="flex-1" />
             <span className="h-2 w-28 overflow-hidden rounded-full bg-desk">
               <span
@@ -476,6 +525,18 @@ function AdminDashboard() {
 
           {openId === c.id && (
             <div className="border-t border-rule px-5 py-4">
+              <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="text-sm font-bold">حالة الحجز:</span>
+                <Segment
+                  value={c.booking_status}
+                  onChange={(v) => updateBookingStatus(c.id, v)}
+                  options={[
+                    { value: "pending", label: "قيد الانتظار", cls: "na" },
+                    { value: "booked", label: "تم حجز موعد", cls: "yes" },
+                    { value: "cancelled", label: "ملغى", cls: "no" },
+                  ]}
+                />
+              </div>
               <table className="w-full text-[13.5px]">
                 <thead>
                   <tr className="text-xs text-inkmut">
