@@ -36,7 +36,7 @@ const REQUIREMENTS = [
     code: "bank_statement",
     title: "كشف حساب آخر 6 شهور",
     details: "كشف حساب بنكي لآخر ستة أشهر، مختوم بختم حي.",
-    needs_translation: false,
+    needs_translation: true,
   },
   {
     code: "family_status",
@@ -69,6 +69,20 @@ const REQUIREMENTS = [
     condition_note: "فقط في حال التقديم بأوراق شركة",
   },
   {
+    code: "good_conduct",
+    title: "شهادة تزكية",
+    details: "شهادة تزكية من جهة موثوقة (اختياري — تقوي الملف إن وُجدت).",
+    needs_translation: true,
+    is_optional: true,
+  },
+  {
+    code: "prior_service",
+    title: "شهادات خدمة سابقة",
+    details: "شهادات خدمة أو عمل سابقة (اختياري — تقوي الملف إن وُجدت).",
+    needs_translation: true,
+    is_optional: true,
+  },
+  {
     code: "originals",
     title: "النسخة الأصلية للمستندات",
     details: "إحضار النسخ الأصلية لجميع المستندات في يوم الموعد.",
@@ -83,14 +97,15 @@ async function main() {
   for (let i = 0; i < REQUIREMENTS.length; i++) {
     const r = REQUIREMENTS[i];
     await query(
-      `INSERT INTO requirements (code, title, details, needs_translation, is_conditional, condition_note, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO requirements (code, title, details, needs_translation, is_conditional, condition_note, is_optional, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (code) DO UPDATE SET
          title = EXCLUDED.title,
          details = EXCLUDED.details,
          needs_translation = EXCLUDED.needs_translation,
          is_conditional = EXCLUDED.is_conditional,
          condition_note = EXCLUDED.condition_note,
+         is_optional = EXCLUDED.is_optional,
          sort_order = EXCLUDED.sort_order`,
       [
         r.code,
@@ -99,6 +114,7 @@ async function main() {
         r.needs_translation,
         r.is_conditional || false,
         r.condition_note || "",
+        r.is_optional || false,
         i + 1,
       ]
     );

@@ -16,8 +16,11 @@ CREATE TABLE IF NOT EXISTS requirements (
   needs_translation BOOLEAN NOT NULL DEFAULT false,
   is_conditional BOOLEAN NOT NULL DEFAULT false,
   condition_note TEXT NOT NULL DEFAULT '',
+  is_optional BOOLEAN NOT NULL DEFAULT false,
   sort_order INT NOT NULL DEFAULT 0
 );
+
+ALTER TABLE requirements ADD COLUMN IF NOT EXISTS is_optional BOOLEAN NOT NULL DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS responses (
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

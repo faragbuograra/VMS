@@ -91,7 +91,7 @@ app.get("/api/me", auth, async (req, res) => {
 // ---------- customer checklist ----------
 app.get("/api/checklist", auth, async (req, res) => {
   const { rows } = await query(
-    `SELECT r.id, r.code, r.title, r.details, r.needs_translation, r.is_conditional, r.condition_note,
+    `SELECT r.id, r.code, r.title, r.details, r.needs_translation, r.is_conditional, r.condition_note, r.is_optional,
             COALESCE(resp.has_item, 'no') AS has_item,
             resp.is_translated,
             COALESCE(resp.notes, '') AS notes
@@ -150,16 +150,19 @@ app.get("/api/admin/customers", auth, adminOnly, async (req, res) => {
       const resp = respMap.get(`${c.id}-${r.id}`);
       const has_item = resp ? resp.has_item : "no";
       const is_translated = resp ? resp.is_translated : null;
-      // مكتمل إذا: عنده المستند (ومترجم إن كان يتطلب ترجمة)، أو لا ينطبق عليه
+      // مكتمل إذا: عنده المستند (ومترجم إن كان يتطلب ترجمة)، أو لا ينطبق عليه،
+      // أو المستند اختياري ولا يملكه (لا يؤثر على اكتمال الملف)
       const complete =
         has_item === "na" ||
-        (has_item === "yes" && (!r.needs_translation || is_translated === true));
+        (has_item === "yes" && (!r.needs_translation || is_translated === true)) ||
+        (r.is_optional && has_item === "no");
       return {
         requirement_id: r.id,
         code: r.code,
         title: r.title,
         needs_translation: r.needs_translation,
         is_conditional: r.is_conditional,
+        is_optional: r.is_optional,
         has_item,
         is_translated,
         notes: resp ? resp.notes : "",

@@ -27,6 +27,14 @@ function CondChip() {
   );
 }
 
+function OptionalChip() {
+  return (
+    <span className="whitespace-nowrap rounded-full border border-pen/50 bg-pen/10 px-2.5 py-0.5 text-[11.5px] font-medium text-pendark">
+      اختياري
+    </span>
+  );
+}
+
 const inputCls =
   "w-full rounded-md border border-rule bg-white px-3.5 py-2.5 text-[15px] transition-colors focus:border-pen";
 
@@ -170,7 +178,9 @@ function Segment({ value, options, onChange }) {
 function ReqCard({ it, index, savedId, onUpdate }) {
   const complete =
     it.has_item === "na" ||
-    (it.has_item === "yes" && (!it.needs_translation || it.is_translated === true));
+    (it.has_item === "yes" && (!it.needs_translation || it.is_translated === true)) ||
+    (it.is_optional && it.has_item === "no");
+  const untouchedOptional = it.is_optional && it.has_item === "no";
   const numColor =
     it.has_item === "na" ? "text-inkmut/70" : complete ? "text-seal" : "text-stamp";
 
@@ -194,7 +204,12 @@ function ReqCard({ it, index, savedId, onUpdate }) {
               <span className="text-xs font-bold text-seal">✓ تم الحفظ</span>
             )}
             {it.is_conditional && <CondChip />}
-            {complete ? (
+            {it.is_optional && <OptionalChip />}
+            {untouchedOptional ? (
+              <Stamp kind="na" small>
+                غير مطلوب
+              </Stamp>
+            ) : complete ? (
               <Stamp kind={it.has_item === "na" ? "na" : "ok"} small>
                 {it.has_item === "na" ? "لا ينطبق" : "مكتمل"}
               </Stamp>
@@ -255,7 +270,8 @@ function Checklist({ user }) {
   function isComplete(it) {
     return (
       it.has_item === "na" ||
-      (it.has_item === "yes" && (!it.needs_translation || it.is_translated === true))
+      (it.has_item === "yes" && (!it.needs_translation || it.is_translated === true)) ||
+      (it.is_optional && it.has_item === "no")
     );
   }
 
@@ -338,6 +354,11 @@ function Checklist({ user }) {
 
       <div className="mt-5 rounded-lg border border-foil/50 bg-foil/10 px-5 py-4 text-sm leading-7">
         📌 <b>تذكير:</b> لازم تجيب النسخة الأصلية لجميع المستندات معاك في يوم الموعد.
+      </div>
+
+      <div className="mt-3 rounded-lg border border-stamp/40 bg-stamp/8 px-5 py-4 text-sm leading-7">
+        ⚠️ <b>ملاحظة:</b> في حالة وجود شخص قاصر أو كفيل ضمن الملف، لازم الحضور شخصياً إلى مكتب
+        القنصلية للتأكيد والتوقيع.
       </div>
     </div>
   );
