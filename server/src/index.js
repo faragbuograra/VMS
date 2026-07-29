@@ -3,6 +3,7 @@ import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { query } from "./db.js";
@@ -182,6 +183,15 @@ app.get("/api/admin/customers", auth, adminOnly, async (req, res) => {
 
   res.json({ customers: result });
 });
+
+// في الإنتاج: تقديم الواجهة المبنية (client/dist) من نفس الخادم
+const clientDist = path.join(__dirname, "..", "..", "client", "dist");
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`✔ خادم منصة التأشيرات شغال على http://localhost:${PORT}`);

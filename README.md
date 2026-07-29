@@ -62,6 +62,29 @@ cd server && npm run setup-db
 
 (آمن — يحدّث القائمة بدون مسح بيانات الزبائن)
 
+## التشغيل على سيرفر (VPS)
+
+المشروع فيه Docker جاهز — على أي سيرفر Ubuntu/Debian:
+
+```bash
+# 1) تثبيت Docker (مرة واحدة)
+curl -fsSL https://get.docker.com | sh
+
+# 2) تنزيل المشروع
+git clone https://github.com/faragbuograra/--------------.git visa-platform
+cd visa-platform
+
+# 3) التشغيل (غيّر القيم السرية!)
+DB_PASSWORD='كلمة-سر-قوية' JWT_SECRET='نص-سري-طويل' docker compose up -d --build
+```
+
+بعدها المنصة شغالة على `http://IP-السيرفر` (المنفذ 80).
+
+- قاعدة البيانات والجداول والأدمن يتجهزوا تلقائياً عند أول تشغيل
+- البيانات محفوظة في volume اسمه `db_data` وتبقى بعد إعادة التشغيل
+- التحديث لاحقاً: `git pull && docker compose up -d --build`
+- تغيير المنفذ: `APP_PORT=8080 docker compose up -d`
+
 ## هيكل المشروع
 
 ```

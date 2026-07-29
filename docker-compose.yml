@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: visa_platform
+      POSTGRES_USER: visa
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-visa_db_2026}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U visa -d visa_platform"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://visa:${DB_PASSWORD:-visa_db_2026}@db:5432/visa_platform
+      JWT_SECRET: ${JWT_SECRET:-change-me-please}
+      PORT: 4000
+    ports:
+      - "${APP_PORT:-80}:4000"
+    command: sh -c "node server/src/setup.js && node server/src/index.js"
+
+volumes:
+  db_data:
