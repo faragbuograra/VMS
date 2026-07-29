@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/*
+  هوية "ملف السفارة" — مشتقة من عالم ملف التأشيرة نفسه:
+  غلاف الجواز الليبي الأخضر، ذهب الغلاف، حبر الأختام، قلم الموظف الأزرق، ورق النماذج.
+*/
+@theme {
+  --color-ink: #0e2418; /* حبر غلاف الجواز */
+  --color-seal: #2e6b46; /* ختم القبول الأخضر */
+  --color-stamp: #af3b2e; /* ختم النقص الأحمر */
+  --color-pen: #33608c; /* حبر قلم الموظف */
+  --color-pendark: #274b6e; /* حبر القلم عند الضغط */
+  --color-foil: #c6a038; /* ذهب الغلاف */
+  --color-paper: #fcfbf7; /* ورق المستندات */
+  --color-desk: #e8ebe2; /* سطح المكتب / النموذج */
+  --color-inkmut: #5c685e; /* نص ثانوي */
+  --color-rule: #d8ddce; /* خطوط الفصل */
+
+  --font-display: "Aref Ruqaa", "IBM Plex Sans Arabic", serif;
+  --font-sans: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  html {
+    direction: rtl;
+  }
+  body {
+    background-color: var(--color-desk);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-pen);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* الخط الذهبي المزدوج — مثل إطار غلاف الجواز */
+  .cover-rule {
+    height: 6px;
+    background:
+      linear-gradient(var(--color-foil), var(--color-foil)) top / 100% 1.5px
+        no-repeat,
+      linear-gradient(var(--color-foil), var(--color-foil)) bottom / 100% 1px
+        no-repeat;
+    opacity: 0.75;
+  }
+
+  /* الختم المطاطي — التوقيع البصري للمنصة */
+  .stamp {
+    font-family: var(--font-display);
+    display: inline-block;
+    padding: 0.05rem 0.75rem 0.25rem;
+    border: 3.5px double currentColor;
+    border-radius: 7px;
+    rotate: -7deg;
+    line-height: 1.5;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    user-select: none;
+    animation: stamp-press 0.3s cubic-bezier(0.2, 1.6, 0.45, 1) both;
+  }
+  .stamp-sm {
+    font-size: 13px;
+    border-width: 3px;
+    padding: 0 0.6rem 0.15rem;
+    border-radius: 6px;
+  }
+}
+
+@keyframes stamp-press {
+  0% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
